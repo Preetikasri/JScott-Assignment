@@ -2,7 +2,7 @@
 title: "Hw3"
 Group: 11(Preetika Srivastava, Vir Mehta, Cherry Agarwal, Guanhua Zhang) 
 date: "2018/8/7"
-output: rmarkdown::github_document
+output: github_document
 ---
 
 ```{r}
