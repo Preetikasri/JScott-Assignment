@@ -1,0 +1,782 @@
+---
+title: "STA 380: Exercises #1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 1: Probability Practice
+### Part A
+The following arithmetic shows the process in which the question of: "What fraction of people who are TRUTHFUL CLICKERS - TC -  answered YES" is answered. The desired solution is given in the form: P(Y|TC), which reads as: "The Probability of answering YES given the fact that the individual is a Truthful Clicker":
+
+
+P(Y) = P(Y,RC) + P(Y,TC) = 
+
+
+P(Y|RC) x P(RC) + P(Y|TC) x P(TC) =
+
+
+0.3 x 0.5 + 0.7 x P(Y|TC) = 0.65
+
+
+P(Y|TC) = __0.714__
+
+
+__71.4% of people who are Truthful Clickers answered YES__
+
+
+### PART B 
+The following arithmetic shows the process in which the question of: "What is the probability that an individual has the disease supposing that the individual tests positive" is answered. 
+
+
+P(Positive) = P(Positive, D) + P(Positive, NOT D) = 
+
+
+P(Positive|D) x P(D) + P(Positive|NOT D) x P(NOT D) =
+
+
+0.000025 x 0.993 + 0.9999750.00001 P(D|Positive) = P(D) 
+
+
+P(Positive|D) / P(Positive) = 
+
+
+0.000025 x 0.993 / (0.000025 x 0.993 + 0.999975 x 0.0001) = 
+
+
+__0.198824__
+
+
+__If someone were to test positive, there is only a 19.88% chance that they actually do have the disease__
+
+
+Given the result of this calculation, it is clear that there are severe concerns if considering an implementation of a universal testing policy for this disease. Based on our calculation, if an individual tests positive, there is only a _1 in 5 chance_ that they do in fact have the disease. This has the potential to cause many people heartache by giving them a _False Positive_ test result.
+
+
+#Problem 2: Green Buildings 
+
+
+###Goal of Assignment
+
+
+The goal of what we are being asked to do is to help the developer understand whether or not the so-called Stats-Guru on her staff has provided her with legitimate and reliable analysis. We will walk you through the process we went through to analyze the dataset and ultimately decide whether or not we agree with the findings of her staff member.
+_Note: we will primarily focus on data visualization to illustrate the reasons behind our conclusions_
+
+
+###Exploratory Analysis
+###Understanding Low Occupancy Rates
+
+
+Firstly, we wanted to dive deeper into the initial approach the staff member took when he decided to remove the low occupancy buildings from consideration. We wanted to evaluate this decision further to see if we could also justify removing these buildings from the dataset. 
+
+
+The first step in this evaluation was to identify the factors that influence the occupancy rates. We performed a correlation, and the influencing factors were discovered to be: 
+
+
+1. _Growth Rate of Employment_ in the Region
+2. _Rent_ Charged
+3. _Age_ of the Building
+4. At least one of the Listed _Amenities_ is Present in the Building 
+
+
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+# set your working directory
+getwd()
+setwd("C:\\Users\\vsm397\\Desktop\\Vir's Personal documents\\Pred Modeling (MSBA)")
+
+## import the data and create data frame
+green <- read.csv("greenbuildings.csv",header = T)
+
+library(mosaic)
+
+green_only = subset(green, green_rating==1)
+not_green = subset(green, green_rating==0)
+
+#the distributation of occupancy
+#hist(green_only$leasing_rate, 25)
+#hist(not_green$leasing_rate, 25)
+#summary(lm(leasing_rate~.,data=green))
+```
+
+### Comparing Leasing Rates based on Occupancy Rates 
+Now that we have an awareness of which variables influence Occupancy Rates, we wanted to get a sense of how either a high or low occupancy rate affects the leasing rate charge. To do this, we established a 'low' occupancy rate as 10, and split the dataset into these respective values. 
+
+```{r echo=FALSE,message=FALSE, results='hide'}
+low_occupancy <- green[green$leasing_rate < 10,]
+high_occupancy <- green[green$leasing_rate > 10,]
+
+```
+
+```{r, echo=FALSE,message=FALSE}
+par(mfrow=c(1,1))
+boxplot(low_occupancy$Rent, col = 'green', 
+     xlab = "Median = 20.50", 
+     ylab = "Leasing Rates", main = "Low Occupancy")
+summary(low_occupancy$Rent)
+par(mfrow=c(1,1))
+boxplot(high_occupancy$Rent,col = 'green',
+     xlab = "Median = 25.29", 
+     ylab = "Leasing Rates", main = "High Occupancy")
+summary(high_occupancy$Rent)
+
+```
+
+
+As one can see from the above boxplot, there is a clear and distinct difference between the median leasing rates of high and low occupancies. What this reveals is that thus far in our analysis, it appears as if the staff member made a wise decision to remove the low occupancy values from the dataset. The reason we feel this way at this point is because of the nature of the vast contrast in leasing rates. Not only is it fair to assume that these occupancy rates should be removed, but it is also a fair assumption that our building on East Cesar Chavez will have High Occupancy. 
+
+
+### Incorprating Age into Occupancy Rates
+Now when evaluating the dataset, we decided to narrow our focus on the Age of the Buildings. The reason for this is because as we discovered from the initial correlation, Age is one of the factors that plays a significant role in occupany rates. Therefore, we thought it would be interesting to see if any relationship existed between Age and Occupancy Rates.
+
+```{r, echo=FALSE,message=FALSE}
+boxplot(low_occupancy$age, col = 'green',
+     xlab = "Median = 57.00", 
+     ylab = "Age", main = "Low Occupancy")
+summary(low_occupancy$age)
+boxplot(high_occupancy$age, col = 'green',
+     xlab = "Median = 34.00", 
+     ylab = "Age", main = "High Occupancy")
+summary(high_occupancy$age)
+```
+
+
+As one can see from the boxplot generated, there is once again a unique characteristic that can be observed betweem Age and Occupancy Rates. More specifically, lower occupancy rate buildings have a much higher median than the high occupancy buildings- the median is nearly 20 years older for the lower occupancy buildings. This provides even further proff that the stats-guru was justified in his reason to remove the low occupancy rates from the dataset. However, we wanted to go one step further in our analysis to truly solidify this decision made on the dataset.
+
+
+### Gaining a Sense of Amenities w/in Low & High Occupancy Buildings
+Thus far, there has been an evaluation of Lease Rates and Age to further understand Occupancy Rates. The final variable that we wil evaluate against Occupancy Rates is the binary variable: Amenities. Before discussing the data, it is important to mention that our intuition tells us that it is highly likely that a low occupancy building will not have one of the Amenities listed:
+
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+hist(low_occupancy$amenities, col = 'green')
+```
+
+
+Just as our intuition told us, the above graph confirms the notion that low occupancy buildings are not likely to have amenities present.
+
+
+_At this point in our analysis, after thoroughly looking into the staff members decision to remove the low occupancy rates from the dataset, our group has reached a conclusion that we_ __agree with the decision to remove certain low occupancy buildings from consideration__. 
+
+
+### Discovering a Natural Occupancy Cutoff 
+Now that we have stated our first significant finding, we now wanted to continue the analysis that the staff member conducted. To do this, we had the goal of discovering if there was a point that a natural occupancy rate cutoff existed. Essentially, we want to see if we can further the analysis by picking a specific number to represent a building that is either Low or High Occupancy:
+
+
+To do this, we wanted to design two plots in the hope of uncovering a natural cutoff. Much to our satisfaction, a natural cutoff of 60 emerged, and can be seen in the plots below:
+
+
+```{r echo=FALSE}
+par(mfrow=c(1,2))
+hist(green$leasing_rate, col = 'green')
+boxplot(green$leasing_rate, xlab = "Break Around 60", 
+     ylab = "Leasing Rates", main = "Finding Natural Cutoff", col = 'green')
+```
+
+
+In both of the graphs above, it appears logical to look at the value 60 and observe a natural break in the data. 
+
+
+_Going forward with our analysis we will consider a "High Occupancy" building to be a building that has a occupancy rate greater than or equal to 60_
+
+
+## Green vs. Non-Green Comparisons
+### High occupancy rates
+```{r echo=FALSE, message=FALSE, results='hide'}
+high_occupancy_green <- green_only[green_only$leasing_rate >= 60,]
+high_occupancy_not_green <- not_green[not_green$leasing_rate >= 60,]
+```
+
+
+Now that our dataset has been cleaned in a rather similar fashion as the stats-guru, we now will shift our focus to giving a numerical evaluation of Green Buildings vs. Non-Green Buildings.
+
+
+To begin this process, we decided a solid first step would be to isolate the Green Buildings and see the requency in which Amenities are present in those buildings:
+
+
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+hist(high_occupancy_green$amenities, col = 'green')
+
+```
+
+
+_Based on the graph, it is clear that a majority of High Occupancy Buildings do in fact have Amenities present_ This matched our intuition, and was a good check of the natural boundary of 60 that we had established.
+
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+high_occupancy_green_amentities <- high_occupancy_green[high_occupancy_green$amenities == 1,]
+high_occupancy_not_green_amentities <- high_occupancy_not_green[high_occupancy_not_green$amenities == 1,]
+```
+
+
+## Green vs. Non-Green Cont'd
+To dive further into some of the prior analysis conducted, we decided to continue the isolation of Green and Non-Green Buildings and evaluate the variables: _Amenities_ and _Rent_. 
+
+
+Boxplots were generated to see the relationship between amenities and rent on both green and non-green buildings:
+
+
+```{r echo=FALSE,message=FALSE}
+boxplot(high_occupancy_green_amentities$Rent, col = 'green', xlab = "Median = 27.86", 
+     ylab = "Leasing Rates", main = "Green Building")
+summary(high_occupancy_green_amentities$Rent)
+boxplot(high_occupancy_not_green_amentities$Rent, col = 'green', xlab = "Median = 25.34", 
+     ylab = "Leasing Rates", main = "Non-Green Building")
+summary(high_occupancy_not_green_amentities$Rent)
+```
+
+
+The median values shown are the market rent rates for green and non-green buildings on a per square foot per year basis. These numbers will be used below to finalize our decision:
+
+
+### Revenue Calculations
+Now we will perform calculations to check and see if the results derived by the staff member are reasonable and align with the results we are about to calculate:
+
+
+
+```{r echo=FALSE, message=FALSE}
+summary(high_occupancy_green_amentities$leasing_rate)
+summary(high_occupancy_not_green_amentities$leasing_rate)
+```
+
+
+We will now find how many years it will take to start making a profit and recuperate the costs of constructing this building.
+
+
+Revenue = ($250,000 x 27.86 x 0.9305) - ($250,000 x 25.34 * 0.9193) = __$657,617__
+
+
+Recuperation Time = $5,000,000 / $657,617 = __7.61 years__
+
+
+```{r echo=FALSE, message=FALSE}
+revenue = (250000 * 27.86 * .9305) - (250000 * 25.34 * 0.9193)
+years = 5000000 / revenue
+years
+```
+
+
+Staff Member Calculation  | Our Calculation
+------------- | -------------
+Recuperate Costs in 7.70 years  | Recuperate Costs in 7.61 years
+
+
+### Final Decision
+As one can see, us and the staff member got essentialy the same figure for the recuperation time - a little over 7 and a half years. Based on this fact, and the walkthrough of the method that we went through, we can conclude that we __do in fact agree with the conclusions of the on-staff stats guru__. 
+
+
+We walked through the journey of explaining how we logically thought about and solved the business problem facing this particular Austin real-estate developer. From our perspective, steps taken by the staff member were perfectly logical and reasonable, and the conclusions we reached are essentially the same as the excel guru.
+
+
+_We feel confident in our recommendation to build the Green Building on East Cesar Chavez due to the fact that it appears to be a wise financial investment_
+
+
+# Problem 3: Bootstrapping
+
+## Goal of Exercise
+The goal of this exercise is to be able to grasp a fundamental understanding of the potential risk and return opportunities of the various assets listed. 
+
+
+Then, later in the exercise, we will dive further specific portfolios listed to gain an understanding of the level of risk/return that can be obtained depending on the portfolio chosen.
+
+
+##Understanding the Available Data
+The first step in our approach was to gain an understanding of the ETFs we were provided. The following are graphs of the Returns of these 5 different ETF's:
+
+```{r echo=FALSE, message=FALSE}
+rm(list=ls())
+#install.packages('quantmod')
+library(quantmod)
+library(mosaic)
+
+library(foreach)
+sp500 <- new.env()
+SPY=getSymbols("SPY",auto.assign = FALSE, from = "2005-01-01",to='2018-01-01')
+TLT=getSymbols("TLT",auto.assign = FALSE, from = "2005-01-01",to='2018-01-01')
+LQD=getSymbols("LQD",auto.assign = FALSE, from = "2005-01-01",to='2018-01-01')
+EEM=getSymbols("EEM",auto.assign = FALSE, from = "2005-01-01",to='2018-01-01')
+VNQ=getSymbols("VNQ",auto.assign = FALSE, from = "2005-01-01",to='2018-01-01')
+
+
+TLTa = adjustOHLC(TLT)
+LQDa = adjustOHLC(LQD)
+EEMa = adjustOHLC(EEM)
+VNQa = adjustOHLC(VNQ)
+SPYa = adjustOHLC(SPY)
+
+hist(ClCl(SPYa),5, main = "Distribution for SPY returns ")
+hist(ClCl(TLTa),5, main = "Distribution for TLT returns ")
+hist(ClCl(LQDa),5, main = "Distribution for LQD returns ")
+hist(ClCl(EEMa),5, main = "Distribution for EEM returns ")
+hist(ClCl(VNQa),5, main = "Distribution for VNQ returns ")
+
+all_returns = cbind(ClCl(SPYa),ClCl(TLTa),ClCl(LQDa),ClCl(EEMa),ClCl(VNQa))
+stdev_vector = vector()
+for (i in 1:ncol(all_returns))
+{
+ s = sd(all_returns[, i], na.rm = T)
+ stdev_vector = c(stdev_vector, s)
+ 
+}
+
+all_etf = colnames(all_returns)
+ETF_order = all_etf[order(stdev_vector, decreasing = F)]
+stdev_vector = stdev_vector[order(stdev_vector, decreasing = FALSE)]
+print(ETF_order)
+## The last element is the 
+# most volatile one
+
+all_returns_1 = cbind(ClCl(SPYa),ClCl(TLTa),ClCl(LQDa),ClCl(EEMa),ClCl(VNQa))
+head(all_returns_1)
+all_returns_1 = as.matrix(na.omit(all_returns_1))
+
+return.today_1 = resample(all_returns_1, 1, orig.ids=FALSE)
+
+initial_wealth = 100000
+sim1 = foreach(i=1:1000, .combine='rbind') %do% {
+	total_wealth_1 = initial_wealth
+	weights_1 = c(0.2, 0.2, 0.2, 0.2, 0.2)
+	
+	n_days_1 = 20
+	wealthtracker_1 = rep(0, n_days_1)
+	for(today in 1:n_days_1) {
+	  holdings_1 = weights_1 * total_wealth_1
+		return.today_1 = resample(all_returns_1, 1, orig.ids=FALSE)
+		holdings_1 = holdings_1 + holdings_1*return.today_1
+		total_wealth_1 = sum(holdings_1)
+		wealthtracker_1[today] = total_wealth_1
+	}
+	wealthtracker_1
+}
+
+```
+
+
+### Wealth and Loss/Profit
+The next step in the process was to evauate the distribution of wealth amongst the ETFs. Then, we would set out to derive the likelihood of a significant loss.
+
+
+The distribution of wealth and the likelihhod of a loss are shown beloe:
+
+```{r echo=FALSE, message=FALSE}
+head(sim1)
+hist(sim1[,n_days_1], 25, main = "Distribution of Wealth")
+
+# Profit/loss
+mean(sim1[,n_days_1])
+hist(sim1[,n_days_1]- initial_wealth, breaks=30, main = "Distribution of Loss/Profit")
+
+# Calculate 5% value at risk
+q = quantile(sim1[,n_days_1], 0.05) - initial_wealth
+
+
+```
+There is a 5% chance that loss will be more than $101,357.40
+
+### Explanation of Asset Distribution
+The histograms of each asset show the distribution for the daily return of each assets. The more volatile the return is, the more risk the investor will bear. Also, the higher return also involves more risk of loss. 
+Here we calculate the variance of each asset's return and find the more risky assets: VNQ and EEM, and the safer assets: LQD, TLT, SPY.
+
+
+### Optimal Distribution of Wealth
+```{r echo=FALSE, message=FALSE}
+### Simulating weights for ETFs to distribute the wealth
+
+set.seed(99)
+weights.mat = matrix(0.00, nrow = 50, ncol = 5 )
+for (k in (1:nrow(weights.mat)))
+{
+ #print(k)
+ voltl = runif(2, 0.05, 0.1)
+ weights.mat[k,4:5] = voltl
+ safe = runif(2,0.2,0.3)
+ last = 1- sum(c(voltl, safe))
+ v1 = c(safe, last)
+ v1 = v1[sample(1:3)]
+ weights.mat[k, 1:3] = v1
+}
+
+## Using these weights to simulate different wealth distributions. However, for one single distribution weights remain ##fixed.
+
+all_returns_2 = cbind(ClCl(SPYa),ClCl(TLTa),ClCl(LQDa),ClCl(EEMa), ClCl(VNQa))
+head(all_returns_2)
+all_returns_2 = as.matrix(na.omit(all_returns_2))
+
+return.today_2 = resample(all_returns_2, 1, orig.ids=FALSE)
+
+initial_wealth = 100000
+
+comparison.mat = matrix(0, nrow = 50, ncol = 2)
+for (r in 1:nrow(weights.mat))
+{
+  sim2 = foreach(i=1:1000, .combine='rbind') %do% {
+  total_wealth_2 = initial_wealth
+  weights_2 = weights.mat[r, ]
+  n_days_2 = 20
+  wealthtracker_2 = rep(0, n_days_2)
+  
+  for(today in 1:n_days_2) {
+   holdings_2 = weights_2 * total_wealth_2
+   return.today_2 = resample(all_returns_2, 1, orig.ids=FALSE)
+   holdings_2 = holdings_2 + holdings_2*return.today_2
+   total_wealth_2 = sum(holdings_2)
+   wealthtracker_2[today] = total_wealth_2
+  }
+ wealthtracker_2
+}
+
+# Profit/loss
+mean(sim2[,n_days_2])
+#hist(sim2[,n_days_2]- initial_wealth, breaks=30)
+
+# Calculate 5% value at risk
+q= quantile(sim2[,n_days_2], 0.05) - initial_wealth
+comparison.mat[r, 1] = r
+comparison.mat[r,2] = q
+
+}
+
+idx_max = which(comparison.mat[,2] == max(comparison.mat[, 2]))
+#optimum_weights = weights.mat[idx_max, ]
+
+optimum_weights = data.frame(matrix(ncol = 5, nrow = 1))
+names(optimum_weights) = c("SPY", "TLT", "LQD", "EEM", "VNQ")
+optimum_weights[1,] = weights.mat[idx_max, ]
+
+optimum_weights
+
+```
+The optimum distributions of Wealth by this simulation are shown above: 
+
+
+### ETF Evaluation
+We decided to choose all the five ETFs, and assign simulated weights to them. We inspected the standard deviation for each of them and found which ones are prone to heavy fluctuations. The most aggressive ones are assigned very low weights, compared to the safer ones. And we keep simulating the weights also. 
+
+The ditribtuion we get can be seen in the results , and how the wealth is distributed across the assets. 
+The first three which are safe are having maximum wealth distribution 
+
+It is quite evident how the best set of weights are distributing the wealth optimally across all assets.
+
+
+```{r echo=FALSE, message=FALSE}
+
+
+### part 3
+
+## Simulating weights for two most aggresive assets
+
+set.seed(99)
+weights.mat_aggresive = matrix(0.00, nrow = 50, ncol = 2 )
+for (k in (1:50))
+{
+ #print(k)
+ weights.mat_aggresive[k,1] = runif(1,0.0, 1.0)
+ weights.mat_aggresive[k,2] = 1- (weights.mat_aggresive[k,1])
+}
+
+## Choosing the most aggressive two assetts. 
+all_returns_3 = cbind(ClCl(EEMa), ClCl(VNQa))
+all_returns_3 = as.matrix(na.omit(all_returns_3))
+
+return.today_3 = resample(all_returns_3, 1, orig.ids=FALSE)
+
+initial_wealth = 100000
+
+comparison.mat.agg = matrix(0, nrow = 50, ncol = 2)
+for (r in 1:nrow(weights.mat_aggresive))
+{
+ sim3 = foreach(i=1:1000, .combine='rbind') %do% {
+   total_wealth_3 = initial_wealth
+   weights_3 = weights.mat_aggresive[r, ]
+   #holdings_3 = weights_3 * total_wealth_3
+   n_days_3 = 20
+   wealthtracker_3 = rep(0, n_days_3)
+   for(today in 1:n_days_3) {
+     
+     holdings_3 = weights_3 * total_wealth_3
+     return.today_3 = resample(all_returns_3, 1, orig.ids=FALSE)
+     holdings_3 = holdings_3 + holdings_3*return.today_3
+     total_wealth_3 = sum(holdings_3)
+     wealthtracker_3[today] = total_wealth_3
+   }
+   wealthtracker_3
+ }
+ 
+ # Profit/loss
+ mean(sim3[,n_days_3])
+ 
+ 
+ # Calculate 5% value at risk
+ q= quantile(sim3[,n_days_3], 0.05) - initial_wealth
+ comparison.mat.agg[r, 1] = r
+ comparison.mat.agg[r,2] = q
+ 
+}
+
+
+idx_max = which(comparison.mat.agg[,2] == max(comparison.mat.agg[, 2]))
+#optimum_weights = weights.mat[idx_max, ]
+
+optimum_weights = data.frame(matrix(ncol = 2, nrow = 1))
+names(optimum_weights) = c( "EEM", "VNQ")
+optimum_weights[1,] = weights.mat_aggresive[idx_max, ]
+
+optimum_weights
+
+```
+The optimum distribution of wealth by this simulation is calculated as: 
+_Note how there are only two ETFs present in this portfolio_
+
+### Final Analysis
+In this case, we decided to choose VNQ and EEM in our aggressive portfolio. We decided to not go with all the assets , since the risk of portfolio will be diversified with more assets included and it will get safer. 
+
+
+Here, we are looking out for the most risky portfolios. We have tried 50 weights combinations for each portfolio and find the best one and worst one and make our investment recommendation based on our result.
+
+
+Based on the results of three portfolios, we see that how assets can be distributed between two ETFs in an optimal fashion.
+
+
+# Problem 4: Market Segmentation
+
+
+### __Goal of Report__
+The following report is designed to assist NutrientH2O identify strategic market segmentations that emerge based on their social media audience on Twitter. Performing text-based analysis can be incredibly beneficial for NutrientH2O to identify consumers that can be segmented and targeted directly and efficiently. The following report will show the process of uncovering insights from the market-research data, as well as provide interesting and well-supported conclusions about the audience for NutrientH2O.
+
+
+```{r echo=FALSE}
+library(corrplot)
+social_mkting_df = read.csv('social_marketing.csv', header=TRUE)
+#head(social_mkting_df)
+```
+
+
+```{r echo=FALSE}
+#Filtering out columns = Chatter, Uncategorised, Spam and Adult. Analyzing the data we can find that these few categories 
+#might not be a good fit in most of the clusters
+social_mkting_df <- social_mkting_df[,-c(1,5,35,36)]
+
+#Check if any interest are correlated
+```
+
+### __Cleaning the Data__
+Much like nearly any dataset one will encounter, the process of going through and cleaning the data is a vital one that requires a thorough understanding of the business problem at hand. For this particular dataset on sentiments on social media, there are inherent concerns with the text data that must be addressed prior to performing a thorough clustering-based analysis. Firstly, a decision was made to not incorporate the categories of: "Chatter", "Spam", "Un-Categorized", and "Adult" when conducting the analysis. These categories are not only inapprorpiate, but will not provide business value to NutrientH2O, which is ultimately the end goal. 
+
+
+### __Understanding the Data__
+First and foremost, we set out to get an overall sense of the information the dataset was providing us. To begin, a correlation matrix was created to have an intial identification of potential market segmentation. Correlation matrices are effective for getting a solid foundation of the dataset, and can later be used to refer back to once various clustering algorithms are performed, such as k-means and hierarchical clustering methods.   
+
+```{r echo=FALSE, results='hide', message=FALSE}
+corr_mat=cor(social_mkting_df,method="s")
+corr_mat[1:32, 1:32]
+```
+```{r echo=FALSE}
+corrplot(corr_mat)
+```
+
+
+As mentioned, the objective of this correlation approach is to gain an understanding of trends and relationships in the data to provide a sense of clarity and direction for further analysis. As one can deduct from the matrix, there already appears to be certain subjects that appear to have somewhat of a relationship. For example, "Personal Fitness" and "Health Nutrition" are understandibly highly correlated. Based on this fact, one can infer that a so-called 'fitness enthusiast' has the potential to be clustered based on the relationship between these two variables. Further examples include: 'News and Politics', 'Shopping and Photo Sharing, 'Parents, Religion, and Sports Fandom'.
+
+### __Data Analysis__
+#### __K-Means Clustering__
+To begin the analysis of the business problem at hand, we made a decision to start off with a K-Means Clustering method for analysis. Based on the unsupervised nature of the problem, as well as the end goal of helping NutrientH2) identify market segments, we decided to begin our approach using K-means.
+
+We standardized the data before performing Kmeans
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+# Center/scale the data
+social_mkting_scaled <- scale(social_mkting_df) 
+#View(head(social_mkting_scaled))
+
+set.seed(99)
+```
+
+We began clustering by identifying the number of clusters - aka K-value- from a Scree Plot. The Scree Plot would help visualize the ideal number of clusters based on the point where the slope of the line begins to level off.
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+###Kmeans Clustering 
+par(mfrow = c(1, 1))
+
+# Scree plot for identifying K
+
+# Initialize total within sum of squares error: wss
+wss <- 0
+
+# Look over 1 to 15 possible clusters which gives minimum sum of squares
+for (i in 1:15) {
+  # Fit the model: km.out
+  km.out <- kmeans(social_mkting_scaled, centers = i, nstart = 20, iter.max = 50)
+  # Save the within cluster sum of squares
+  wss[i] <- km.out$tot.withinss
+}
+```
+
+
+```{r}
+#Produce a Scree Plot
+```
+```{r echo=FALSE}
+
+plot(1:15, wss, type = "b", 
+     xlab = "Number of Clusters", 
+     ylab = "Within groups sum of squares", main = "Scree plot to identify K")
+```
+
+As one can see, it appears there is a natural leveling off phenomena once the number of clusters reaches 11. Therefore, we made a decision to choose 11 as our k-value for further analysis. Thus far, we have a general awareness of the number of market segmentations to look for as we dive deeper into the text data.
+
+
+#### Visualzing Clusters Identified by K-Means
+Now we fit the model with k = 11 clusters and run the model
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+# Taking optimum vale of K after which no improvement in SSE and fitting the model again
+k <- 11
+
+# Build model with k clusters: km.out
+set.seed(99)
+km.out <- kmeans(social_mkting_scaled, centers = k, nstart = 50, iter.max = 50)
+
+# View the resulting model
+km.out
+
+#plotting the clusters
+#library(cluster)
+#clusplot(social_mkting_scaled, km.out$cluster, main='2D representation of the Cluster solution', 
+         #color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+Now that the k-means algorithm has generated a proposed number of clusters to be 11, we wanted to visualize this concept to see where specifically these clusters can be identified in the dataset. 
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+#identifying the groups in each cluster
+for (i in 1:k){
+  pie(colSums(social_mkting_df[km.out$cluster==i,]),cex=0.9)
+}
+```
+
+Based on the charts given above, here are the segments identified using K-Means:
+
+1. Dating, School, Fashion, Photosharing - 
+2. Food, Religion, Parenting, Sports Fandom
+3. Politics, Travel, News, Computers
+4. Photo Sharing, Shopping, Current Events
+5. Photo Sharing, Travel, Health & Nutrition
+6. Cooking, Photo Sharing, Beauty, Fashion
+7. TV & Film, Art
+8. Online Gaming, College/University, Sports Playing
+9. TV & Film, College/University, Music
+10. Health & Nutrition, Personal Fitness, Cooking, Outdoors
+11. News, Automotive, Politics
+
+#### __Principal Component Analysis__
+When faced with a large set of correlated variables, principal components allow us to summarize this set with a smaller number of representative variables that collectively explain most of the variability in the original set. We now try reducing the variable dimensionality using PCA, identify the important Principal components (usually the first few) and then run Hierarchical clustering on these components
+
+```{r echo=FALSE, message=FALSE}
+### # Perform PCA 
+pr.out = prcomp(social_mkting_df, scale = TRUE)
+
+Cols=function(vec){cols=rainbow(length(unique(vec)));return(cols[as.numeric(as.factor(vec))])}
+
+#Summary for PC output
+summary(pr.out)
+
+```
+
+The variance explained by each principal component and the cumulative variance explained can be seen in the graph below
+
+```{r echo=FALSE}
+#PVE for each PC(scree plot) and the cumulative PVE plot
+par(mfrow=c(1,2))
+plot(summary(pr.out)$importance[2,], type="o", ylab="PVE", xlab="Principal Component ",col="blue", main = "Variability by each component")
+plot(summary(pr.out)$importance[3,], type="o", ylab="Cumulative PVE", xlab="Principal Component ", col="brown3", main = "Cumulative variability")
+```
+
+As we can see, first few components are not sufficient to explain the variability in the data.80% of the variability of our data can be explained with 16 principal components
+
+#### __Hierarchical Clustering__
+To provide more clarity and confirm the result of 11 potential market segmentations from the k-means method, we performed a Hierarchical Clustering algorithm to compare and determine what similarities would emerge.
+We use 16 principal components from PCA to perform heirarchical clustering. Since it is a market segment problem, we use correlation based distance and we try to experiment with three linkage methods : Single, Complete and Average
+
+```{r echo=FALSE}
+# Fit hierarchical clustering on these 16 PCs
+
+# We use Correlation-based distance here(market segment problem)
+res.cor <- cor(t(pr.out$x[,1:16]), method = "pearson")
+d.cor <- as.dist(1 - res.cor)
+
+# fitting hierarchical clustering
+hc.out_single = hclust(d.cor, method = 'single')
+# Visualization of hclust
+plot(hc.out_single, labels = FALSE, hang = -1, main = "Single linkage")
+
+hc.out_complete = hclust(d.cor, method = 'complete')
+# Visualization of hclust
+plot(hc.out_complete, labels = FALSE, hang = -1, main = "Complete linkage")
+
+hc.out_average = hclust(d.cor, method = 'average')
+# Visualization of hclust
+plot(hc.out_average, labels = FALSE, hang = -1, main = "Average linkage")
+
+#Average-link (or group average) clustering is a compromise between the sensitivity of 
+#complete-link clustering to outliers and the tendency of single-link clustering to form 
+#long chains that do not correspond to the intuitive notion of clusters as compact, spherical objects.
+```
+
+We decide to go with Average linkage method (or group method) clustering as it provides a trade off between the senstivity of complete linkage clustering to outliers and the tendency of single linkage clustering to form long chains that do not correspond to the intuitive notion of the clusters as compact, spherical objects
+
+Looking at the tree, we can cut the tree at the height of 0.9 and then identify the clusters and no of entries in each cluster
+```{r echo=FALSE}
+hc_clust_avg = cutree(hc.out_average, h = 0.9)
+table(hc_clust_avg)
+```
+
+Now we want to visualize the segments identified by hierarchical clustering
+
+```{r echo=FALSE}
+##identifying the groups in each cluster
+
+for (i in 1:11){
+  pie(colSums(social_mkting_df[hc_clust_avg == i,]),cex=0.9)
+}
+```
+
+Based on the charts given above, here are the segments identified using Hierarchical Clustering:
+
+1. Health & Nutrition, Personal Fitness, Cooking, Outdoors
+2. Food, Religion, Parenting, Sports Fandom
+3. TV & Film, Art
+4. Photo Sharing, Shopping, Current Events, Travel
+5. Politics, Travel, News, Computers
+6. Cooking, Photo Sharing, Beauty, Fashion
+7. Dating, School, Fashion, Photo Sharing 
+8. Home & Garden, Health Nutrition, College/University
+9. Online Gaming, College/University, Sports Playing
+10. TV & Film, College/University, Music
+11. News, Automotive, Politics, Sports Fandom
+
+### __Insights and Recommendations__
+The comprehensive approach described above was the analysis that went into uncovering insights that could be beneficial for NutrientH2O for the purposes of providing meaningful market segmentation. We used a cluster approach to define various market segments from the social media data presented. 
+
+
+The most desired insight to uncover is to explicitly state the distinct market segments that emerged from the analysis. Based on the K-Means and Hierarchical Clustering algorithms, we could come with 9 broad Market Segments:
+
+1. Dating, School, Fashion, Photo Sharing
+2. Food, Religion, Parenting, Sports Fandom
+3. Politics, Travel, News, Computers
+4. Photo Sharing, Shopping, Current Events, Travel
+5. Cooking, Photo Sharing, Beauty, Fashion
+6. Online Gaming, College/University, Sports Playing
+7. TV & Film, College/University, Music
+8. Health & Nutrition, Personal Fitness, Cooking, Outdoors
+9. News, Automotive, Politics, Sports Fandom
+
+
+With this Market Segmentation knowledge in mind, NutrientH2O can design specific marketing campaigns to these 9 distinct audience members. 
+
+
+For example, it is highly likely that the demographic information for segment #5 - 'Cooking, Photo Sharing, Beauty, Fashion' is vastly different than the demographic makeup of segment #6 - 'Online Gaming, College/University, Sports Playing'. More specifically, based on substantive knowledge of those subject matters, it is fair to assume that segment #5 is comprised of a larger female population than segment #6. Therefore, NutrientH2O can use this market segmentation knowledge to their advantage by designing two separate marketing campaigns to address members of each segment #5 and #6 to convey the most compelling message.
+
+
+Insights such as the one descrived can be invalubale to a firm in terms of strategic marketing, and we were able to leverage clustering algorithms for the purposes of identifying market segments. Our analysis was not only thorough, but also confirmed some of the initial intuition we had when first evaluating the dataset, and can be used by NutrientH2O to increase profitability.
