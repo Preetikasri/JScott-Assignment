@@ -1,0 +1,63 @@
+---
+title: "Groceries"
+author: "Guanhua_Zhang"
+date: "2018/8/18"
+output: html_document
+---
+
+Question 3: Association rule mining
+
+```{r}
+#import library and read in data as basket format
+library(tidyverse)
+library(arules)  
+groceries = read.transactions("/Users/ghz/Desktop/groceries.txt", format="basket", sep=",",rm.duplicates = FALSE)
+
+```
+
+```{r}
+# Cast this variable as a special arules "transactions" class.
+groctrans = as(groceries, "transactions")
+summary(groctrans)
+
+```
+Now we will look at the rules with support > .05 & confidence >.1 & length <= 3
+```{r}
+#run the 'apriori' algorithm
+grocrules_1 <- apriori(groctrans, parameter=list(support=.05, confidence=.1, maxlen=3))
+#let's look at the output
+inspect(grocrules_1)
+```
+
+We can find that there are only 14 itemsets in this result. Lots of them are concentrated on the relationship between milk, yogurt and rolls/buns. There are a lot of other groceries not included. That might because our choice of support is relatively large and the confidence is relatively small so that we cannot get more meaningful itemsets in this result.
+
+Let's try more thresholds and see the result.
+
+Now we will look at the rules with support > .03 & confidence >.2 & length  <= 4. We also relax the maxlen and increase the confidence here.
+
+```{r}
+#run the 'apriori' algorithm
+grocrules_2 <- apriori(groctrans, parameter=list(support=.03, confidence=.2, maxlen=4))
+inspect(grocrules_2)
+```
+Here we get 26 itemsets. These itemsets include most of the foods. But still, some of the food wasn't mentioned and milk and yogurt appears most frequently in this result.
+
+
+Here we are going to increase the confidence further and decrease the support.
+
+Now we will look at the rules with support > .0015 & confidence >.85 & length  <= 4. We also relax the maxlen and increase the confidence here.
+
+```{r}
+#run the 'apriori' algorithm
+grocrules_3 <- apriori(groctrans, parameter=list(support=.0015, confidence=.85, maxlen=4))
+inspect(grocrules_3)
+```
+
+Here we get the perfect result which include all of the items we could expect. So far the rules with support > .0015 & confidence >.85 & length  <= 4 is the best rule among the three, which means if a customer buy item X, he/she will also have 85% chance to buy item Y. 
+
+We can find from the result that:
+1.if a customer buys the vegetables juice, he/she tends to buy vegetables.    
+2.if a customer buys the liquor and red wine tends to buy bottled beer also.  
+3.the whole milk is the most common item customers buy.
+
+So placing the those items next to each other will make shoppings more convenient.
