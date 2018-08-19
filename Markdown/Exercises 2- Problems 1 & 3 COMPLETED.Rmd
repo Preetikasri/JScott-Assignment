@@ -1,0 +1,370 @@
+---
+title: "Exercises 2"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Problem 1 - Abia
+
+
+### "Your task is to create a figure, or set of related figures, that tell an interesting story about flights into and out of Austin. You can annotate the figure and briefly describe it, but strive to make it as stand-alone as possible. It shouldn't need many, many paragraphs to convey its meaning. Rather, the figure should speak for itself as far as possible."
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+# set your working directory
+getwd()
+setwd("C:\\Users\\vsm397\\Desktop\\Vir's Personal documents\\Pred Modeling (MSBA)")
+
+## import the data and create data frame
+abia <- read.csv("ABIA.csv",header = T)
+library(ggplot2)
+
+```
+
+
+#### To answer this question, we are going to address a wide range of questions in an attempt to achieve an overall better understanding of the flights that occus at the Austin-Bergstrom Interational Airport.
+
+
+#### These include addressing questions like:
+
+
+#### 1. The Biggest Carrier at this airport
+#### 2. The most popular flights flying into and out of Austin
+#### 3. The frequency of flights from the most popular locations
+#### 4. Comparing 'Short' and 'Long' flights
+#### 5. Determining performance in terms of the day of the week and time of day
+#### 6. Incorporating weather into the analysis
+
+
+#### Answering these questions, and even a few more, will allow us to gain a better grasp of some interesting findings at the ATX airport and display a unique story
+
+
+#### To begin, we will try to identify the biggest carrier associated with the Austin airport:
+
+
+```{r echo=FALSE}
+ggplot(abia, aes(UniqueCarrier))+
+  geom_bar(stat="count", width=0.7, fill="steelblue") +
+  labs(title= "Biggest carrier in Austin", 
+     x="Carrier", y = "Number of flights")
+```
+
+
+#### Based on the graph, it looks like WN and AA are the two biggest carriers in Austin (about a decade ago- 2008)
+
+
+#### Now we will see the number of flights arriving in Austin
+
+
+```{r echo=FALSE}
+aus_arrival = abia[abia$Dest == 'AUS',]
+y <-aggregate(cbind(count = FlightNum) ~ Origin, 
+          data = aus_arrival, 
+          FUN = function(x){NROW(x)})
+y_sorted <- y[order(-y$count),][1:10,]
+
+ggplot(y_sorted, aes(x = Origin, y = count))+
+  geom_bar(stat = 'identity',width=0.7,fill = 'tomato3')+
+  labs(title= "Top 10 origins of flights to Austin", 
+       x="Origin", y = "Number of flights")
+```
+
+
+#### These are the top 10 origins with flights landing in Austin. DAL and DFW (Dallas and Dallas-Fort Worth) host the majority of flights
+
+
+#### Now we will transition to observe flights departing from Austin
+
+
+```{r echo=FALSE}
+aus_dest = abia[abia$Origin == 'AUS',]
+x <-aggregate(cbind(count = FlightNum) ~ Dest, 
+              data = aus_dest, 
+              FUN = function(x){NROW(x)})
+x_sorted <- x[order(-x$count),][1:10,]
+
+
+ggplot(x_sorted, aes(x = Dest, y = count))+
+  geom_bar(stat = 'identity',width=0.7,fill = 'yellow')+
+  labs(title= "Top 10 destination of flights from Austin", 
+       x="Destinations", y = "Number of flights")
+```
+
+
+#### It appers as if most of the flights starting from Austin are directed towards the above mentioned top 10 destinations. Again, the majority of the flights are for Dallas
+
+
+#### Now lets see the frequency of the flights from these top 10 locations to Austin
+
+
+```{r echo=FALSE}
+top_10 = aus_arrival[aus_arrival$Origin %in% c('ATL','DAL','DEN','DFW','HOU','IAH','JFK','LAX','ORD','PHX'),]
+top_10_x <-aggregate(cbind(count = FlightNum) ~ Origin + Month, 
+              data = top_10, 
+              FUN = function(x){NROW(x)})
+
+ggplot(top_10_x, aes(x=factor(Month), y=count, group=Origin)) +
+  geom_line(aes(color=Origin))+
+  geom_point(aes(color=Origin))+
+  scale_color_brewer(palette="Dark2")+
+  labs(title= "Number of flights for top 10 origins throughout the year", 
+       x="Month", y = "Number of flights")
+```
+
+
+#### Looks like number of flights originating from Dallas are reducing from approximately the middle of the year
+
+
+```{r echo=FALSE}
+top_10_dest = aus_dest[aus_dest$Dest %in% c('ATL','DAL','DEN','DFW','HOU','IAH','JFK','LAX','ORD','PHX'),]
+top_10_y <-aggregate(cbind(count = FlightNum) ~ Dest + Month, 
+                     data = top_10_dest, 
+                     FUN = function(x){NROW(x)})
+
+ggplot(top_10_y, aes(x=factor(Month), y=count, group=Dest)) +
+  geom_line(aes(color=Dest))+
+  geom_point(aes(color=Dest))+
+  scale_color_brewer(palette="Dark2")+
+  labs(title= "Number of flights for top 10 destinations throughout the year", 
+       x="Month", y = "Number of flights")
+```
+
+
+### We can see a similar drop in Austin to Dallas flights from the middle of the year. We can deduc that something likely went wrong here
+
+
+#### Lets try to understand and see WHY there was a sudden drop in flights originating and departing from Dallas to Austin
+
+
+```{r echo=FALSE}
+dallas = abia[(abia$Origin == 'DAL' | abia$Dest == 'DAL'),]
+dallas_carrier = aggregate(cbind(count = FlightNum) ~ UniqueCarrier + Month, 
+                           data = dallas, 
+                           FUN = function(x){NROW(x)})
+
+ggplot(dallas_carrier, aes(x=factor(Month), y=count, group=UniqueCarrier)) +
+  geom_line(aes(color=UniqueCarrier))+
+  geom_point(aes(color=UniqueCarrier))+
+  scale_color_brewer(palette="Dark2")+
+  labs(title= "Number of flights originating and landing in dallas by carrier", 
+       x="Month", y = "Number of flights")
+```
+
+
+#### The MQ carrier stopped its service after June, and this clearly explains the drop in the Dallas flights. This was an interseting finding that tells a story as to WHY there was a drop in the occurrence of Dallas flights.
+
+
+#### We will now take a look at the percentage of flights cancelled for each airline carrier 
+
+
+```{r echo=FALSE}
+dfcancelled = data.frame(aggregate(abia$Cancelled~abia$UniqueCarrier,abia,sum))
+
+df=data.frame(aggregate(abia$FlightNum ~ abia$UniqueCarrier,abia, length))
+finaldf = merge(dfcancelled,df)
+finaldf = within(finaldf, percent <- abia.Cancelled/abia.FlightNum)
+finaldf = finaldf[order(finaldf$percent),]
+
+barplot(finaldf$percent, names = finaldf$arrivaldelays.UniqueCarrier,
+        xlab = 'Unique Carrier', ylab = '% of Flights Cancelled',
+        main = "% of Flights Cancelled per Airline",las=2, space = .5, col = 'dodgerblue3',
+        names.arg = c("NW","F9","US","WN","XE","UA","DL","CO","YV","B6", "OO","EV","OH","9E","AA","MQ"))
+```
+
+
+#### We will now check frequency of short and long distance flights
+#### (Flights originating from Austin)
+
+
+```{r echo=FALSE}
+abia$type <- ifelse(abia$Distance < 701, 'Short distance','Long distance')
+dist <- abia[abia$Origin == 'AUS',]
+
+ggplot(data=dist, aes(x=factor(Month), fill=type)) +
+  geom_bar(stat="count", position=position_dodge())+
+  scale_fill_brewer(palette="Paired")+
+  labs(title= "Number of short/long distance flights originating from Austin", 
+      x="Month", y = "Number of flights")
+```
+
+
+#### (Flights landing in Austin)
+
+
+```{r echo=FALSE}
+dist1 <- abia[abia$Dest == 'AUS',]
+
+ggplot(data=dist1, aes(x=factor(Month), fill=type)) +
+  geom_bar(stat="count", position=position_dodge())+
+  scale_fill_brewer(palette="Paired")+
+  labs(title= "Number of short/long distance flights landing in Austin", 
+       x="Month", y = "Number of flights")
+```
+
+
+#### Taxi-out time of flights starting from Austin to the top 10 airports
+
+
+```{r echo=FALSE}
+ggplot(top_10_dest, aes(factor(DayOfWeek), TaxiOut))+
+  geom_boxplot(varwidth=T, fill="plum") +
+  labs(title= "TaxiOut time by Day of the week", 
+       x="Day of the week", y = "TaxiOut time")
+```
+
+
+#### To our surprise, it does NOT Look like the day of the week really matters here. (It does not appear to play too significant of a factor)
+
+
+```{r echo=FALSE}
+ggplot(top_10_dest, aes(UniqueCarrier, TaxiOut))+
+  geom_boxplot(varwidth=T, fill="orange") +
+  labs(title= "TaxiOut time by Carrier", 
+       x="Carrier", y = "TaxiOut time")
+```
+
+
+#### Based on the analysis, it looks like the bigger airlines that we observed earlier- like AA and WN- are given higher preference to take off and therefore have lower taxi-out time than some other airlines
+
+
+```{r echo=FALSE}
+ggplot(top_10_dest, aes(factor(round(DepTime/100, digits =0)), TaxiOut))+
+  geom_boxplot(varwidth=T, fill="orange") +
+  labs(title= "TaxiOut time by Actual dept time", 
+       x="actual dept time", y = "TaxiOut time")
+```
+
+
+#### To gain a better understanding of trends in the Time of Day, we wanted to see which times appeared to be the busiest. It looks like the morning time of 6:00am - 8:00am and afternoon times between 3:00pm - 6:00pm are the busisest times
+
+
+#### Reasons of delay for the flights originating from Austin - to top 10 airports
+
+
+#### %flights with Carrier Delay by carrier
+
+
+```{r echo=FALSE}
+carr_delay1 <- aggregate(FlightNum ~ UniqueCarrier,data=top_10_dest,function(x){NROW(x)})
+carr_delay2 <- aggregate(CarrierDelay ~ UniqueCarrier,data=top_10_dest,function(x){NROW(is.na(x))})
+carr_delay3 <- cbind(carr_delay1,carr_delay2)
+carr_delay3$CarrierDelay_percent <- (carr_delay3$CarrierDelay/carr_delay3$FlightNum)*100
+carr_delay3 <- carr_delay3[-3]
+
+ggplot(carr_delay3, aes(x=UniqueCarrier, y=CarrierDelay_percent)) +
+  geom_bar(stat = 'identity',width=0.7,fill = 'tomato3')+
+  labs(title= "Flights with carrier delay by carrier", 
+       x="Carrier", y = "% flights with carrier delay")
+```
+
+
+#### % flights with weather delay by month
+
+
+```{r echo=FALSE}
+weather_delay1 <- aggregate(FlightNum ~ Month,data=top_10_dest,function(x){NROW(x)})
+weather_delay2 <- aggregate(WeatherDelay ~ Month,data=top_10_dest,function(x){NROW(is.na(x))})
+weather_delay3 <- cbind(weather_delay1,weather_delay2)
+weather_delay3$WeatherDelay_percent <- (weather_delay3$WeatherDelay/weather_delay3$FlightNum)*100
+weather_delay3 <- weather_delay3[-3]
+
+ggplot(weather_delay3, aes(x=factor(Month), y=WeatherDelay_percent)) +
+  geom_bar(stat = 'identity',width=0.7,fill = 'steelblue')+
+  labs(title= "Flights with weather delay by month", 
+       x="Month", y = "% flights with weather delay")
+```
+
+
+## Problem 2 - TBD...
+
+
+## Problem 3 - Practice with association rule mining
+
+
+### "Find some interesting association rules for these shopping baskets"
+
+
+```{r echo=FALSE, message=FALSE, results='hide'}
+#import library and read in data as basket format
+library(tidyverse)
+library(arules)  
+groceries = read.transactions("groceries.txt", format="basket", sep=",",rm.duplicates = FALSE)
+
+```
+
+
+
+```{r}
+# Cast this variable as a special arules "transactions" class.
+groctrans = as(groceries, "transactions")
+summary(groctrans)
+```
+
+
+#### Now we will look at the rules with support > .05 & confidence >.1 & length <= 3
+
+
+#### (run the 'apriori' algorithm)
+
+
+```{r}
+grocrules_1 <- apriori(groctrans, parameter=list(support=.05, confidence=.1, maxlen=3))
+```
+
+
+##### let's look at the output:
+
+
+```{r}
+inspect(grocrules_1)
+```
+
+
+#### We can find that there are only 14 item sets in this result. Lots of them are concentrated on the relationship between milk, yogurt, and rolls/buns. There are a lot of other groceries not included. That might because our choice of support is relatively large and the confidence is relatively small so that we cannot get more meaningful item sets in this result.
+
+
+#### Let's try more thresholds and see the result:
+
+
+#### Now we will look at the rules with support > .03 & confidence >.2 & length <= 4. We also relax the maxlen and increase the confidence here.
+
+
+```{r}
+#### run the 'apriori' algorithm
+grocrules_2 <- apriori(groctrans, parameter=list(support=.03, confidence=.2, maxlen=4))
+inspect(grocrules_2)
+```
+
+
+#### Here we get 26 item sets. These item sets include most of the foods. But still, some of the food was not mentioned, and milk and yogurt appears most frequently in this result.
+
+
+#### Here we are going to increase the confidence even further and decrease the support.
+
+
+#### Now we will look at the rules with support > .0015 & confidence >.85 & length <= 4. We also relax the maxlen and increase the confidence here.
+
+
+```{r}
+#### run the 'apriori' algorithm
+grocrules_3 <- apriori(groctrans, parameter=list(support=.0015, confidence=.85, maxlen=4))
+inspect(grocrules_3)
+```
+
+
+#### Here we get the perfect result which includes all of the items we could expect. So far, the rules with support > .0015 & confidence >.85 & length <= 4 is the best rule amongst the three, which means if a customer buys item X, he/she will also have 85% chance to buy item Y.
+
+
+#### We can find from the result that: 
+#### 1. if a customer buys the vegetables juice, he/she tends to buy vegetables.
+#### 2. if a customer buys the liquor and red wine tends to buy bottled beer also.
+#### 3. the whole milk is the most common item customers buy.
+
+
+#### Therefore, placing those items next to each other will make shopping a more convenient experience for the cosumer.
