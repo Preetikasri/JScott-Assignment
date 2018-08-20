@@ -1,8 +1,6 @@
 ---
-title: "Exercises 2"
-output:
-  html_document: default
-  pdf_document: default
+title: "Assignment 380- Exercises 2"
+output: github_document
 ---
 
 ## Problem 1 - Abia
@@ -18,12 +16,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r echo=FALSE, message=FALSE, results='hide'}
 # set your working directory
-getwd()
-setwd("C:\\Users\\vsm397\\Desktop\\Vir's Personal documents\\Pred Modeling (MSBA)")
+#getwd()
+#setwd("C:\\Users\\vsm397\\Desktop\\Vir's Personal documents\\Pred Modeling (MSBA)")
+library(ggplot2)
 
 ## import the data and create data frame
-abia <- read.csv("ABIA.csv",header = T)
-library(ggplot2)
+abia <- read.csv("../data/ABIA.csv",header = T)
+#library(ggplot2)
 
 ```
 
@@ -281,7 +280,156 @@ ggplot(weather_delay3, aes(x=factor(Month), y=WeatherDelay_percent)) +
 ```
 
 
-## Problem 2 - TBD...
+## Problem 2 - Author Attribution
+
+```{r}
+
+rm(list = ls())
+
+library(tm)
+library(e1071)
+library(randomForest)
+library(caret)
+library(ggplot2)
+library(stringr)
+library(plyr)
+
+## Creating reader function
+readerPlain = function(fname){
+  readPlain(elem=list(content=readLines(fname)), 
+            id=fname, language='en')}
+
+author_texts = Sys.glob('../data/ReutersC50/C50train/*')
+## Testing the author texts
+author_texts[[1]]
+#my_path = author_texts[[1]]
+#word(my_path, -1, sep = "/")
+all_files = NULL
+train_labels = NULL
+### creating training labels
+for (name in author_texts)
+{
+  files_to_add = Sys.glob(paste0(name, '/*.txt'))
+  all_files = append(all_files, files_to_add)
+  y = word(name, -1, sep = "/")
+  train_labels = append(train_labels, rep(y, length(files_to_add)))
+}
+
+all_texts = lapply(all_files, readerPlain) 
+names(all_texts) = all_files
+names(all_texts) = sub('.txt', '', names(all_texts))
+
+train_corpus = Corpus(VectorSource(all_texts))
+#names(train_corpus) = all_files
+
+train_corpus = tm_map(train_corpus, content_transformer(tolower)) 
+train_corpus = tm_map(train_corpus, content_transformer(removeNumbers)) 
+train_corpus = tm_map(train_corpus, content_transformer(removePunctuation)) 
+train_corpus = tm_map(train_corpus, content_transformer(stripWhitespace)) 
+train_corpus = tm_map(train_corpus, content_transformer(removeWords), stopwords("SMART"))
+
+DTM_train = DocumentTermMatrix(train_corpus)
+DTM_train = removeSparseTerms(DTM_train, 0.975)
+
+inspect(DTM_train[1:10, 1:5])
+
+
+```
+
+Inspecting Document Term Matrix of train, we can proceed further to create the similar one for test
+data. 
+```{r}
+author_dirs = Sys.glob("../data/ReutersC50/C50test/*")
+file_list = NULL
+test_labels = NULL
+for(author in author_dirs) {
+  y = word(author, -1, sep = "/")
+  files_to_add = Sys.glob(paste0(author, '/*.txt'))
+  test_labels = append(test_labels, rep(y, length(files_to_add)))
+  file_list = append(file_list, files_to_add)
+  
+  #test_labels = append(test_labels, rep(author_name, length(files_to_add)))
+}
+
+all_docs = lapply(file_list, readerPlain) 
+names(all_docs) = file_list
+names(all_docs) = sub('.txt', '', names(all_docs))
+
+test_corpus = Corpus(VectorSource(all_docs))
+
+test_corpus = tm_map(test_corpus, content_transformer(tolower)) 
+test_corpus = tm_map(test_corpus, content_transformer(removeNumbers)) 
+test_corpus = tm_map(test_corpus, content_transformer(removePunctuation)) 
+test_corpus = tm_map(test_corpus, content_transformer(stripWhitespace)) 
+test_corpus = tm_map(test_corpus, content_transformer(removeWords), stopwords("SMART"))
+
+intersection_dictionary = NULL
+intersection_dictionary = dimnames(DTM_train)[[2]]
+
+## Converting test corpus into document term matrix using only dictionary words
+DTM_test = DocumentTermMatrix(test_corpus, list(dictionary=intersection_dictionary))
+DTM_test = removeSparseTerms(DTM_test, 0.975)
+dim(DTM_train)
+dim(DTM_test)
+```
+
+We can clearly see that DTM_train and DTM_test have different dimensions. So, we did the following the ensure the exact same dimensions:
+1.) Make the term frequency for test data only for the words appearing in the train data too.
+2.) For the words not appearing in test data, and those are present in train data, we would add them as 'fill' using rbind.fill function
+
+```{r}
+DTM_test = as.matrix(DTM_test)
+DTM_train = as.matrix(DTM_train)
+
+d1 <- data.frame(DTM_test[,intersect(colnames(DTM_test), colnames(DTM_train))])
+d2 <- read.table(textConnection(""), col.names = colnames(DTM_train), colClasses = "integer")
+
+DTM_test_clean = rbind.fill(d1, d2)
+
+## Now we can make dataframe for both DTM_train and DTM_test and they have same variable dimensions
+DTM_test_df = as.data.frame(DTM_test_clean)
+DTM_Train_df = as.data.frame(DTM_train)
+
+print(dim(DTM_test_df))
+print(dim(DTM_Train_df))
+```
+
+We can see that we have obtained the dataframes with same dimensions, and now we can do modeling
+
+We will try Random Forest and Naive Bayes to predict the author of each text 
+
+```{r}
+### Trying Random Forest
+set.seed(99)
+mod_RF = randomForest(x=DTM_Train_df, y=as.factor(train_labels), mtry=3, ntree=200)
+pred_RF = predict(mod_RF, data=DTM_test_df)
+table_RF = as.data.frame(table(pred_RF,test_labels))
+
+conf_RF = confusionMatrix(table(pred_RF,test_labels))
+conf_RF$overall
+conf_RF_df = as.data.frame(conf_RF$byClass)
+conf_RF_df[order(-conf_RF_df$Sensitivity),1:2]
+```
+
+```{r}
+### Naive Bayes
+
+NB = naiveBayes(x=DTM_Train_df, y=as.factor(train_labels), laplace=1)
+
+pred_NB = predict(NB, DTM_test_df)
+table_NB = as.data.frame(table(pred_NB,test_labels))
+
+conf_NB = confusionMatrix(table(pred_NB,test_labels))
+conf_NB$overall
+conf_NB_df = as.data.frame(conf_NB$byClass)
+conf_NB_df[order(-conf_NB_df$Sensitivity),1:2]
+
+```
+
+After analysing results, Random Forest performs better with ~70% accuracy, and Naive Bayes with ~18 % .
+After analysing Random Forest's Confusion Matrix, author's which are difficult to be discerned are:
+EdnaFernandes, BradDorfman, JonathanBirt, KevinDrawbaugh, KirstinRidley, MureDickie, ScottHillis,
+WilliamKazer.
 
 
 ## Problem 3 - Practice with association rule mining
@@ -294,7 +442,7 @@ ggplot(weather_delay3, aes(x=factor(Month), y=WeatherDelay_percent)) +
 #import library and read in data as basket format
 library(tidyverse)
 library(arules)  
-groceries = read.transactions("groceries.txt", format="basket", sep=",",rm.duplicates = FALSE)
+groceries = read.transactions("../data/groceries.txt", format="basket", sep=",",rm.duplicates = FALSE)
 
 ```
 
