@@ -427,6 +427,7 @@ conf_NB_df[order(-conf_NB_df$Sensitivity),1:2]
 ```
 
 After analysing results, Random Forest performs better with ~70% accuracy, and Naive Bayes with ~18 % .
+We get a decent accuracy with Random Forest, and the one's obtained with PCA aren't at par with this one. This could potentially because of the fact that certain PCs were dropped which where actually able to distinguish the classes, even though they didn't contribute majorly to the variance. Also, in practice, smaller (lower variance) PCs often are associated with noise so there can be benefit in removing them but there is no guarantee of this.
 After analysing Random Forest's Confusion Matrix, author's which are difficult to be discerned are:
 EdnaFernandes, BradDorfman, JonathanBirt, KevinDrawbaugh, KirstinRidley, MureDickie, ScottHillis,
 WilliamKazer.

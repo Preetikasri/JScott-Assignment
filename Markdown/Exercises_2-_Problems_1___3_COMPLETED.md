@@ -526,7 +526,7 @@ conf_NB_df[order(-conf_NB_df$Sensitivity),1:2]
     ## Class: TanEeLyn                 0.00   1.0000000
     ## Class: WilliamKazer             0.00   1.0000000
 
-After analysing results, Random Forest performs better with ~70% accuracy, and Naive Bayes with ~18 % . After analysing Random Forest's Confusion Matrix, author's which are difficult to be discerned are: EdnaFernandes, BradDorfman, JonathanBirt, KevinDrawbaugh, KirstinRidley, MureDickie, ScottHillis, WilliamKazer.
+After analysing results, Random Forest performs better with ~70% accuracy, and Naive Bayes with ~18 % . We get a decent accuracy with Random Forest, and the one's obtained with PCA aren't at par with this one. This could potentially because of the fact that certain PCs were dropped which where actually able to distinguish the classes, even though they didn't contribute majorly to the variance. Also, in practice, smaller (lower variance) PCs often are associated with noise so there can be benefit in removing them but there is no guarantee of this. After analysing Random Forest's Confusion Matrix, author's which are difficult to be discerned are: EdnaFernandes, BradDorfman, JonathanBirt, KevinDrawbaugh, KirstinRidley, MureDickie, ScottHillis, WilliamKazer.
 
 Problem 3 - Practice with association rule mining
 -------------------------------------------------
@@ -606,7 +606,7 @@ grocrules_1 <- apriori(groctrans, parameter=list(support=.05, confidence=.1, max
     ## set item appearances ...[0 item(s)] done [0.00s].
     ## set transactions ...[169 item(s), 9835 transaction(s)] done [0.01s].
     ## sorting and recoding items ... [28 item(s)] done [0.00s].
-    ## creating transaction tree ... done [0.00s].
+    ## creating transaction tree ... done [0.01s].
     ## checking subsets of size 1 2 done [0.00s].
     ## writing ... [14 rule(s)] done [0.00s].
     ## creating S4 object  ... done [0.00s].
@@ -775,7 +775,7 @@ grocrules_3 <- apriori(groctrans, parameter=list(support=.0015, confidence=.85, 
     ## = 0.85, : Mining stopped (maxlen reached). Only patterns up to a length of
     ## 4 returned!
 
-    ##  done [0.01s].
+    ##  done [0.02s].
     ## writing ... [20 rule(s)] done [0.00s].
     ## creating S4 object  ... done [0.00s].
 
